@@ -111,7 +111,7 @@ class GameController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Отримання параметрів гри
             $mode = $_POST['mode'];
-            $size = (int)$_POST['size'];
+            $size = (int) $_POST['size'];
             $difficulty = $_POST['difficulty'] ?? 'easy';
             $playerSymbol = $_POST['player_symbol'] ?? 'X';
 
@@ -172,8 +172,8 @@ class GameController
 
         // Обробка ходу гравця
         if (isset($_GET['row']) && isset($_GET['col'])) {
-            $row = (int)$_GET['row'];
-            $col = (int)$_GET['col'];
+            $row = (int) $_GET['row'];
+            $col = (int) $_GET['col'];
 
             if ($board[$row][$col] === '') {
                 $board[$row][$col] = $turn;
@@ -244,14 +244,18 @@ class GameController
     private function checkWin($board, $symbol, $size)
     {
         for ($i = 0; $i < $size; $i++) {
-            if (count(array_unique($board[$i])) === 1 && $board[$i][0] === $symbol) return true;
-            if (count(array_unique(array_column($board, $i))) === 1 && $board[0][$i] === $symbol) return true;
+            if (count(array_unique($board[$i])) === 1 && $board[$i][0] === $symbol)
+                return true;
+            if (count(array_unique(array_column($board, $i))) === 1 && $board[0][$i] === $symbol)
+                return true;
         }
 
         $diag1 = $diag2 = true;
         for ($i = 0; $i < $size; $i++) {
-            if ($board[$i][$i] !== $symbol) $diag1 = false;
-            if ($board[$i][$size - $i - 1] !== $symbol) $diag2 = false;
+            if ($board[$i][$i] !== $symbol)
+                $diag1 = false;
+            if ($board[$i][$size - $i - 1] !== $symbol)
+                $diag2 = false;
         }
 
         return $diag1 || $diag2;
@@ -272,31 +276,30 @@ class GameController
     private function botMove()
     {
         $board = Session::get('board');
-        $size = Session::get('board_size');
-        $difficulty = Session::get('difficulty', 'easy');
         $botSymbol = Session::get('bot_symbol', 'O');
-        $userSymbol = Session::get('player_symbol', 'X');
 
-        $move = null;
-
-        switch ($difficulty) {
-            case 'easy':
-                $move = $this->firstAvailableMove($board);
-                break;
-            case 'medium':
-                $move = $this->mediumAI($board, $botSymbol, $userSymbol);
-                break;
-            case 'hard':
-                $move = $this->minimaxMove($board, $botSymbol)['move'];
-                break;
-            default:
-                $move = $this->firstAvailableMove($board);
-        }
+        $difficulty = Session::get('difficulty', 'easy');
+        $strategy = $this->getBotStrategy($difficulty);
+        $move = $strategy->getMove(Session::get('board'), Session::get('bot_symbol'));
 
         if ($move) {
             [$i, $j] = $move;
             $board[$i][$j] = $botSymbol;
             Session::set('board', $board);
+        }
+    }
+
+    private function getBotStrategy($difficulty)
+    {
+        switch ($difficulty) {
+            case 'easy':
+                return new EasyBotStrategy();
+            case 'medium':
+                return new MediumBotStrategy();
+            case 'hard':
+                return new HardBotStrategy();
+            default:
+                return new EasyBotStrategy();
         }
     }
 
@@ -353,9 +356,12 @@ class GameController
     {
         $size = count($board);
 
-        if ($this->checkWin($board, $player, $size)) return 1;
-        if ($this->checkWin($board, $opponent, $size)) return -1;
-        if (empty($this->getAvailableMoves($board))) return 0;
+        if ($this->checkWin($board, $player, $size))
+            return 1;
+        if ($this->checkWin($board, $opponent, $size))
+            return -1;
+        if (empty($this->getAvailableMoves($board)))
+            return 0;
 
         $best = $isMax ? -INF : INF;
 
