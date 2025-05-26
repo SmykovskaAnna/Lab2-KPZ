@@ -2,25 +2,20 @@
 
 require_once '../models/Game.php';
 require_once '../core/Session.php';
+require_once '../models/Chat.php';
 
 class GameController
 {
-    private $pdo;
+    private PDO $pdo;
     private $gameModel;
     private $chatModel;
 
     public function __construct()
     {
-        $config = require '../config.php';
-
-        $this->pdo = new PDO(
-            "mysql:host={$config['db']['host']};dbname={$config['db']['dbname']};charset=utf8mb4",
-            $config['db']['user'],
-            $config['db']['pass']
-        );
-        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        $this->pdo = Database::getInstance()->getPDO();
         $this->gameModel = new Game($this->pdo);
+
+        $this->chatModel = new Chat($this->pdo);
 
         Session::start();
     }
