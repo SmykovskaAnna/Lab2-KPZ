@@ -1,24 +1,16 @@
 <?php
 require_once '../models/User.php';
 require_once '../core/Session.php';
+require_once '../core/Database.php';
 
 class UserController
 {
-    private $pdo;
+    private PDO $pdo;
     private $userModel;
 
     public function __construct()
     {
-        $config = require '../config.php';
-        $dsn = sprintf(
-            'mysql:host=%s;dbname=%s;charset=utf8mb4',
-            $config['db']['host'],
-            $config['db']['dbname']
-        );
-
-        $this->pdo = new PDO($dsn, $config['db']['user'], $config['db']['pass']);
-        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        $this->pdo = Database::getInstance()->getPDO();
         $this->userModel = new User($this->pdo);
         Session::start();
     }
@@ -27,19 +19,23 @@ class UserController
     {
         $error = null;
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST')
+        {
             $username = trim($_POST['username'] ?? '');
             $email = trim($_POST['email'] ?? '');
             $password = trim($_POST['password'] ?? '');
 
-            if (empty($username) || empty($email) || empty($password)) {
-                $error = "Усі поля обов'язкові для заповнення.";
-            } elseif ($this->userModel->register($username, $email, $password)) {
+            if (empty($username) || empty($email) || empty($password))
+            {
+                $error = "Усі поля обов'язкові для заповнення";
+            }
+            elseif ($this->userModel->register($username, $email, $password))
+            {
                 header('Location: index.php?action=login');
                 exit;
-            } else {
-                $error = "Ім’я користувача або Email вже зайняті.";
             }
+            else
+                $error = "Ім’я користувача або Email вже зайняті";
         }
 
         include '../views/auth/register.php';
